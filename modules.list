@@ -1,0 +1,10 @@
+modaddr 0x002000000
+
+entry my_pkg
+  kernel fiasco -serial_esc
+  roottask moe rom/my_pkg.cfg
+  module l4re
+  module ned
+  module my_pkg.cfg
+  module my_pkg_server
+  module my_pkg_client

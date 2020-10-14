@@ -1,0 +1,14 @@
+G_FIASCO_DIR=/home/puplauskas/code/kpr/obj/fiasco/amd64
+G_L4_DIR=/home/puplauskas/code/kpr/obj/l4/amd64
+
+function run_qemu()
+{
+  #make -C $G_L4_DIR qemu E=$1 MODULES_LIST=$PWD/modules.list MODULE_SEARCH_PATH=$PWD:$G_FIASCO_DIR
+  make -C $G_L4_DIR qemu MODULES_LIST=$PWD/modules.list MODULE_SEARCH_PATH=$PWD:$G_FIASCO_DIR
+}
+
+function build_qemu()
+{
+  make -C $G_L4_DIR grub2iso E=$1 MODULES_LIST=$PWD/modules.list MODULE_SEARCH_PATH=$PWD:$G_FIASCO_DIR
+  qemu-system-$WANTED_QEMU -cdrom $G_L4_DIR/images/$1.iso -serial stdio
+}
