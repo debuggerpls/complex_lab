@@ -4,13 +4,13 @@
 #include <l4/re/env>
 #include <l4/sys/cxx/ipc_string>
 
-#include <iostream>
+#include <stdio.h>
 
 int error_msg(const char* str);
 
-int main(int argc, char **argv)
+int main()
 {
-  std::cout << "Hello world!\n";
+  printf("Hello world!\n"); 
 
   L4::Cap<IServer> server = L4Re::Env::env()->get_cap<IServer>("server");
   if (!server.is_valid())
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   if (server->log(L4::Ipc::String<>("Hello world!")))
     return error_msg("Could not send to server!");
   
-  std::cout << "Sent successful!\n";
+  printf("Sent successful!\n");
 
   return 0;
 }
