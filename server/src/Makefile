@@ -7,6 +7,6 @@ TARGET	= $(PKGNAME)_server
 SRC_CC	= main.cc
 
 # list requirements of your program here
-REQUIRES_LIBS   = libstdc++
+REQUIRES_LIBS	= libstdc++
 
 include $(L4DIR)/mk/prog.mk

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <vector>
 
 
 class Server : public L4::Epiface_t<Server, IServer>
@@ -19,12 +20,10 @@ class Server : public L4::Epiface_t<Server, IServer>
   int op_log(IServer::Rights, L4::Ipc::String<> s)
   {
     std::cout << _tag << ": " << s.data << "\n";
-    //printf("From %s: %s\n", _tag, s.data);
-
     return 0;
   }
 
-  Server(const std::string &tag) : _tag(tag) {}
+  Server(const char *tag) : _tag(tag) {}
 
   private:
   std::string _tag;
@@ -34,6 +33,11 @@ class SessionServer : public L4::Epiface_t<SessionServer, L4::Factory>
 {
   public:
   SessionServer(L4Re::Util::Registry_server<> &server) : _registry_server(server) {}
+  ~SessionServer()
+  {
+    for (auto s: _servers)
+      delete s;
+  }
 
   int op_create(L4::Factory::Rights, L4::Ipc::Cap<void> &res, 
                 l4_mword_t type, L4::Ipc::Varg_list<> &&args)
@@ -45,12 +49,12 @@ class SessionServer : public L4::Epiface_t<SessionServer, L4::Factory>
     if (!tag.is_of<char const*>()) 
       return -L4_EINVAL;
 
-    std::string tag_str(tag.value<char const*>());
-    auto new_server = new Server(tag_str);
+    auto new_server = new Server(tag.value<char const*>());
+    _servers.push_back(new_server);
 
     if (!_registry_server.registry()->register_obj(new_server).is_valid())
     {
-      printf("Could not register service!\n");
+      std::cerr << "Could not register service!\n";
       return -L4_EINVAL;
     }
 
@@ -61,24 +65,13 @@ class SessionServer : public L4::Epiface_t<SessionServer, L4::Factory>
 
   private:
   L4Re::Util::Registry_server<> &_registry_server;
+  std::vector<Server*> _servers;
 };
 
 
 int main()
 {
-  printf("Hello world!\n");
-
-  /*
-  Server server_obj;
-
-  if (!server.registry()->register_obj(&server_obj, "server").is_valid())
-  {
-    std::cerr << "Could not register service!\n";
-    return 1;
-  }
-
-  std::cout << "Service registered!\n";
-  */
+  std::cout << "Hello world!\n";
 
   L4Re::Util::Registry_server<> server;
 
@@ -86,11 +79,11 @@ int main()
 
   if (!server.registry()->register_obj(&sessionServer, "server").is_valid())
   {
-    printf("Could not register service!\n");
+    std::cerr << "Could not register service!\n";
     return 1;
   }
 
-  printf("Service registered!\n");
+  std::cout << "Service registered!\n";
 
   server.loop();
 

@@ -8,3 +8,7 @@ entry my_pkg
   module my_pkg.cfg
   module my_pkg_server
   module my_pkg_client
+  module io
+  module x86-legacy.devs
+  module x86-fb.io
+  module fb-drv
