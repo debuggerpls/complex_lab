@@ -135,8 +135,7 @@ int TextBox::init(unsigned int xLeft, unsigned int yTop,
 
   _xLeft = xLeft;
   _yTop =yTop;
-  //_xRight = xRight;
-  _xRight = 300;
+  _xRight = xRight;
   _yBottom = yBottom;
   _yCurrent = yTop;
 
