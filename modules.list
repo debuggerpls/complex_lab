@@ -1,14 +1,24 @@
 modaddr 0x002000000
 
-entry my_pkg
+entry simple_log
   kernel fiasco -serial_esc
-  roottask moe rom/my_pkg.cfg
+  roottask moe rom/simple_log.cfg
   module l4re
   module ned
-  module my_pkg.cfg
-  module my_pkg_server
-  module my_pkg_client
+  module simple_log.cfg
+  module fb_log
+  module fb_client
+
+entry fb_log
+  kernel fiasco -serial_esc
+  roottask moe rom/fb_log.cfg
+  module l4re
+  module ned
+  module fb_log.cfg
+  module fb_log
+  module fb_client
   module io
   module x86-legacy.devs
   module x86-fb.io
   module fb-drv
+

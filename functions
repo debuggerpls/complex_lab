@@ -1,5 +1,6 @@
-G_FIASCO_DIR=/home/puplauskas/code/kpr/obj/fiasco/amd64
-G_L4_DIR=/home/puplauskas/code/kpr/obj/l4/amd64
+G_FIASCO_DIR=/home/deividas/projects/kpr/obj/fiasco/amd64
+G_L4_DIR=/home/deividas/projects/kpr/obj/l4/amd64
+WANTED_QEMU=x86_64
 
 function run_qemu()
 {
