@@ -15,7 +15,12 @@ SessionServer::~SessionServer()
 
 int Server::op_log(IServer::Rights, L4::Ipc::String<> s)
 {
-  std::cout << _tag << ": " << s.data << "\n";
+  std::string tmp = _tag + ": " + s.data;
+  std::cout << tmp << "\n";
+  
+  if (_tb)
+    _tb->print(tmp.c_str());
+
   return 0;
 }
 
@@ -33,7 +38,7 @@ int SessionServer::op_create(L4::Factory::Rights, L4::Ipc::Cap<void> &res,
   if (!tag.is_of<char const*>()) 
     return -L4_EINVAL;
 
-  auto new_server = new Server(tag.value<char const*>());
+  auto new_server = new Server(tag.value<char const*>(), _tb);
   _servers.push_back(new_server);
 
   if (!_registry_server.registry()->register_obj(new_server).is_valid())

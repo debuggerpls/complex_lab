@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     {
       std::cout << "Found -s option: " << argv[i+1] << '\n';
       
-      if (tb.init(0, 0, 0, 0, argv[i+1]))
+      if (tb.init(0, 0, 300, 300, argv[i+1]))
         return 1;
       tb_found = true;
       
@@ -41,12 +41,14 @@ int main(int argc, char** argv)
   }
   std::cout << "Service \"server\" registered!\n";
 
+  
   tb.print("Long line: abcdefghjklmnoprqstuwz1234567890abcdefghjklmnoprqstuwz1234567890abcdefghjklmnoprqstuwz1234567890abcdefghjklmnoprqstuwz1234567890abcdefghjklmnoprqstuwz1234567890abcdefghjklmnoprqstuwz1234567890");
   tb.print("Hello line 2");
   tb.print("Hello line 3");
   tb.print("Hello line 4");
   tb.print("Long line: abcdefghjklmnoprqstuwz1234567890abcdefghjklmnoprqstuwz1234567890");
-
+  
+  std::cout << "Test prints ended\n";
 
   server.loop();
 

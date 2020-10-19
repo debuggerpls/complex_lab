@@ -63,11 +63,12 @@ class TextBox
 class Server : public L4::Epiface_t<Server, IServer>
 {
   public:
-  Server(const char *tag) : _tag(tag) {}
+  Server(const char *tag, TextBox *tb = nullptr) : _tag(tag), _tb(tb) {}
   int op_log(IServer::Rights, L4::Ipc::String<> s);
 
   private:
   std::string _tag;
+  TextBox *_tb;
 };
 
 
