@@ -22,3 +22,13 @@ entry fb_log
   module x86-fb.io
   module fb-drv
 
+entry keyboard
+  kernel fiasco -serial_esc
+  roottask moe rom/keyboard.cfg
+  module l4re
+  module ned
+  module keyboard.cfg
+  module fb_kb_drv
+  module io
+  module x86-legacy.devs
+  module x86-fb.io
