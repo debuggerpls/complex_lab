@@ -3,8 +3,8 @@
 #include <iostream>
 
 
-SessionServer::SessionServer(L4Re::Util::Registry_server<> &server, FbProxy *fb) 
-  : _registry_server(server), _fb(fb)
+SessionServer::SessionServer(L4Re::Util::Registry_server<> &server, TextBox *tb) 
+  : _registry_server(server), _tb(tb)
 {} 
 
 SessionServer::~SessionServer()
@@ -82,7 +82,7 @@ int FbProxy::init(const char *service)
   _active = true;
   
   // Test print
-  rgb_print(0, 0, "Test print!", 0xff0000, 0x0);
+  //rgb_print(0, 0, "Test print!", 0xff0000, 0x0);
 
   return 0;
 }
@@ -121,4 +121,68 @@ void FbProxy::rgb_print(int xpos, int ypos, const char *text,
     std::cerr << "FbProxy: not printing, not active!\n";
     return;
   }
+}
+
+
+
+int TextBox::init(unsigned int xLeft, unsigned int yTop,
+    unsigned int xRight, unsigned int yBottom,
+    const char* service)
+{
+  auto res = _proxy.init(service);
+  if (res)
+    return res;
+
+  _xLeft = xLeft;
+  _yTop =yTop;
+  //_xRight = xRight;
+  _xRight = 300;
+  _yBottom = yBottom;
+  _yCurrent = yTop;
+
+  // TODO: font colors
+  _fontHeight = gfxbitmap_font_height(_font);
+  _fontWidth = gfxbitmap_font_width(_font);
+  
+  _active = true;
+  return 0;
+}
+
+
+void TextBox::print(const char* text)
+{
+  // TODO: colors
+  if (_active)
+  {
+    auto len = strlen(text);
+    if (len * _fontWidth < _xRight - _xLeft)
+    {
+      _proxy.rgb_print(_xLeft, _yCurrent, text, 0xffffff, 0x0);
+      _yCurrent += _fontHeight;
+    }
+    else
+    {
+      auto fitting = (_xRight - _xLeft) / _fontWidth;
+      auto done = false;
+      unsigned int pos = 0;
+      while (!done)
+      {
+        if (len - pos <= fitting)
+        {
+          _proxy.rgb_print(_xLeft, _yCurrent, &text[pos], 0xff0000, 0x0);
+          done = true;
+        }
+        else
+        {
+          std::string tmp{&text[pos], fitting};
+          pos += fitting;
+          _proxy.rgb_print(_xLeft, _yCurrent, tmp.c_str(), 0xff0000, 0x0);
+        }
+        _yCurrent += _fontHeight;
+      }
+    }
+    
+  }
+  else
+    std::cerr << "TextBox: not active!\n";
 }

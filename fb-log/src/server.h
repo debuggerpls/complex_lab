@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
+#include <string.h>
 
 class FbProxy
 {
@@ -36,6 +37,29 @@ class FbProxy
 };
 
 
+class TextBox
+{
+  public:
+  int init(unsigned int xLeft, unsigned int yTop,
+    unsigned int xRight, unsigned int yBottom,
+     const char* service);
+  void print(const char* text);
+  // TODO: colors, font size etc
+
+  private:
+  bool _active{false};
+  unsigned int _xLeft;
+  unsigned int _xRight;
+  unsigned int _yTop;
+  unsigned int _yBottom;
+  unsigned int _yCurrent;
+  gfxbitmap_font_t _font{GFXBITMAP_DEFAULT_FONT};
+  unsigned int _fontHeight;
+  unsigned int _fontWidth;
+  FbProxy _proxy;
+};
+
+
 class Server : public L4::Epiface_t<Server, IServer>
 {
   public:
@@ -50,7 +74,7 @@ class Server : public L4::Epiface_t<Server, IServer>
 class SessionServer : public L4::Epiface_t<SessionServer, L4::Factory>
 {
   public:
-  SessionServer(L4Re::Util::Registry_server<> &server, FbProxy *fb = nullptr); 
+  SessionServer(L4Re::Util::Registry_server<> &server, TextBox *tb = nullptr); 
   ~SessionServer();
 
   int op_create(
@@ -60,6 +84,6 @@ class SessionServer : public L4::Epiface_t<SessionServer, L4::Factory>
   private:
   L4Re::Util::Registry_server<> &_registry_server;
   std::vector<Server*> _servers;
-  FbProxy* _fb;
+  TextBox* _tb;
 };
 
