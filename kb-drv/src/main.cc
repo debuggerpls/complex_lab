@@ -1,163 +1,111 @@
-#include <l4/re/c/util/cap_alloc.h>
-#include <l4/re/c/namespace.h>
-#include <l4/sys/utcb.h>
-#include <l4/sys/irq.h>
-#include <l4/sys/factory.h>
+#include <l4/sys/irq>
+#include <l4/sys/factory>
 #include <l4/sys/icu.h>
-
-#include <contrib/libio-io/l4/io/io.h>
- 
-#include <stdio.h>
-#include <unistd.h>
 
 #include <l4/re/env>
 #include <l4/re/namespace>
 #include <l4/re/util/cap_alloc>
 #include <l4/re/util/object_registry>
-#include <iostream>
-#include <thread>
-#include <functional>
 #include <l4/re/error_helper>
+
+#include <l4/util/port_io.h>
+#include <l4/io/io.h>
+
 #include <pthread-l4.h>
-#include <l4/sys/thread>
+#include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
 
+#include <iostream>
+#include <map>
 
-void polling(L4::Cap<L4::Irq> &irq);
-
-void polling(L4::Cap<L4::Irq> &irq)
-{
-  try
-  {
-    for (;;)
-    {
-      /*
-      auto err = irq->receive();
-
-      if (err.has_error())
-      {
-        printf("Error on IRQ receive: %d", err.has_error());
-      }
-      else
-      {
-        printf("Got IRQ with label 0x%1X\n", err.label());
-      }
-      */
-      L4Re::chksys(irq->receive(), "Error on IRQ receive");
-      std::cout << "Received IRQ\n";
-    }
-  }
-  catch(L4::Runtime_error const &e)
-  {
-    std::cerr << "Keyboard polling exited with exception: " << e.str() << '\n';
-  }
-  
-}
+#include "kb_server.h"
 
 
 int main(void)
 {
-  //int irqno = 1;
-  //l4_cap_idx_t irqcap, icucap;
-  //l4_msgtag_t tag;
-  //int err;
-
   if(l4io_request_ioport(0x60, 1) != 0)
   {
     printf("Failed requesting ioport\n");
     return 1;
   }
 
-  //L4::Cap<L4::Icu> icu{ l4re_env_get_cap("icu") };
-  auto icu = L4Re::chkcap(L4Re::Env::env()->get_cap<L4::Icu>("icu"),
-                    "Failed to obtain ICU capability");
+  auto icu = L4Re::Env::env()->get_cap<L4::Icu>("icu");
   if (!icu.is_valid())
   {
-    std::cerr << "Could not get icu cap\n";
+    std::cerr << "Could not get ICU capacity\n";
     return 1;
   }
 
   auto irq = L4Re::Util::cap_alloc.alloc<L4::Irq>();
   if (!irq.is_valid())
   {
-    std::cerr << "Could not allocalte cap irq!\n";
-    return 1;
-  }
-
-  
-  auto err = L4Re::Env::env()->factory()->create_irq(irq);
-  if (err.has_error())
-  {
-    std::cerr << "Could not create_irq!\n";
+    std::cerr << "Could not allocalte IRQ capacity!\n";
     return 1;
   }
   
-  //L4Re::chksys(L4Re::Env::env()->factory()->create(irq), "Failed to create IRQ kernel obj");
-
+  L4Re::chksys(L4Re::Env::env()->factory()->create<L4::Irq>(irq), "Failed to create IRQ");
+  //auto err = L4Re::Env::env()->factory()->create<L4::Irq>(irq);
   /*
-  err = icu->bind(1, irq);
   if (err.has_error())
   {
-    std::cerr << "Could not bind irq to icu\n";
+    std::cerr << "Could not create IRQ!\n";
     return 1;
   }
   */
 
-
-  
-  err = irq->bind_thread(L4Re::Env::env()->main_thread(), 0xaffe);
+  auto err = icu->bind(1, irq);
   if (err.has_error())
   {
-    std::cerr << "Could not bind irq to main thread\n";
+    std::cerr << "Could not bind IRQ to ICU\n";
     return 1;
   }
 
-  err = icu->bind(1, irq);
-  if (err.has_error())
+  const std::map<l4_uint8_t, char> Keycodes
   {
-    std::cerr << "Could not bind irq to icu\n";
+    {2, '1'}, {3, '2'}, {4, '3'}, {5, '4'}, {6, '5'}, {7, '6'}, {8, '7'}, {9, '8'}, {10, '9'}, {11, '0'},
+    {16, 'q'}, {17, 'w'}, {18, 'e'}, {19, 'r'}, {20, 't'}, {21, 'z'}, {22, 'u'}, {23, 'i'}, {24, 'o'}, {25, 'p'},
+    {30, 'a'}, {31, 's'}, {32, 'd'}, {33, 'f'}, {34, 'g'}, {35, 'h'}, {36, 'j'}, {37, 'k'}, {38, 'l'}, //{39, 'ö'},
+    {44, 'y'}, {45, 'x'}, {46, 'c'}, {47, 'v'}, {48, 'b'}, {49, 'n'}, {50, 'm'}, {51, ','}, {52, '.'}, {53, '-'},
+  };
+
+  // TODO: find out why L4Re::Util::Br_manager_hooks is needed
+  L4Re::Util::Registry_server<L4Re::Util::Br_manager_hooks> server;
+  KbServer kb_server;
+
+  if (!server.registry()->register_obj(&kb_server, "keyboard").is_valid())
+  {
+    std::cerr << "Could not register \"keyboard\" service!\n";
     return 1;
   }
-  
+  std::cout << "Service \"keyboard\" registered!\n";
 
-  //std::thread polling_thread(std::ref(irq));
+  auto pfc = icu.cap();
 
+  KeyboardArgs args{ &irq, &kb_server, &Keycodes, &pfc };
 
+  pthread_t irq_thread;
+  pthread_create(&irq_thread, NULL, irq_receive, (void *)&args);
 
-  printf("Attached to key IRQ %d\nPress keys now, Shift-Q to exit\n", 1);
- 
-  //L4::Cap<L4::Thread> polling_cap(pthread_l4_cap(polling_thread.native_handle()));
+  L4::Cap<L4::Thread> irq_thread_cap(pthread_l4_cap(irq_thread));
 
-  //L4Re::chksys(irq->bind_thread(polling_cap, 0xaffe), "Failed t attach to irq\n");
-
-  //polling_thread.join();
-
-
-  /* IRQ receive loop */
-  
-  while (1)
+  err = irq->bind_thread(irq_thread_cap, 0xaffe);
+  if (err.has_error())
   {
-    unsigned long label = 0;
-
-    err = irq->receive();
-
-    if (err.has_error())
-    {
-      printf("Error on IRQ receive: %d", err.has_error());
-    }
-    else
-    {
-      printf("Got IRQ with label 0x%1X\n", err.label());
-      //irq->trigger();
-    }
-
+    std::cerr << "Could not bind IRQ to receiving thread\n";
+    return 1;
   }
-  
-  /* We're done, detach from the interrupt. */
+
+  std::cout << "IRQ was bound to receiving thread\n";
+
+  // TODO: clean up resources etc  
   //tag = l4_irq_detach(irqcap);
   //if ((err = l4_error(tag)))
   //  printf("Error detach from IRQ: %d\n", err);
-  
-  std::cout << "Out of loop\n";
+
+  std::cout << "Starting server loop..\n";
+
+  server.loop();
 
   return 0;
 }

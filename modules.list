@@ -32,3 +32,4 @@ entry keyboard
   module io
   module x86-legacy.devs
   module x86-fb.io
+  module kb_client

@@ -1,13 +1,12 @@
 PKGDIR	?= ../..
 L4DIR		?= $(PKGDIR)/../..
 
-TARGET	= fb_kb_drv
+TARGET	= kb_client
 
 # list your .c or .cc files here
-SRC_CC	= main.cc kb_server.cc
+SRC_CC	= main.cc
 
 # list requirements of your program here
-REQUIRES_LIBS = libio libstdc++ libpthread
-# l4re_c-util
+REQUIRES_LIBS = libstdc++ libpthread
 
 include $(L4DIR)/mk/prog.mk
