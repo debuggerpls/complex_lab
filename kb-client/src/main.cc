@@ -5,6 +5,7 @@
 #include <l4/re/error_helper>
 
 #include <iostream>
+#include <set>
 #include <unistd.h>
 #include <pthread.h>
 #include <pthread-l4.h>
@@ -12,9 +13,27 @@
 
 int error_msg(const char* str);
 
-int main()
+int main(int argc, char **argv)
 {
-  std::cout << "Starting..\n"; 
+  std::cout << "Starting..\n";
+
+  std::set<char> chars;
+  for (int i = 1; i < argc; ++i)
+  {
+    chars.insert(std::tolower(argv[i][0]));
+  }
+
+  if (chars.empty())
+  {
+    std::cerr << "Client was not provided with lowercase chars!\n";
+    return 1;
+  }
+
+  std::cout << "Listening for keys: "
+  for (auto c: chars)
+    std::cout << "\'" << c << "\', ";
+  std::cout << '\n';
+
 
   auto keyboard = L4Re::Env::env()->get_cap<KeyboardInterface>("keyboard");
   if (!keyboard.is_valid())
@@ -58,15 +77,19 @@ int main()
     else
     {
       //std::cout << "no errors, calling is_pressed()\n";
-      bool value = false;
-      if (keyboard->is_pressed('a', &value))
+      for (auto c: chars)
       {
-        std::cerr << "Error while calling is_pressed()\n";
+        bool value = false;
+        if (keyboard->is_pressed(c, &value))
+        {
+          std::cerr << "Error while calling is_pressed()\n";
+        }
+        else
+        {
+          std::cout << "\'" << c << "\':[" << (value ? "x" : " ") << "], ";
+        }
       }
-      else
-      {
-        std::cout << "A is pressed: [" << (value ? "x" : " ") << "]\n";
-      }
+      std::cout << '\n';
     }
     
   }
