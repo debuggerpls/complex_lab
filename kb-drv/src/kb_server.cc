@@ -38,14 +38,29 @@ int KbServer::op_is_pressed(KeyboardInterface::Rights, char key, bool &value)
 }
 
 
+int KbServer::op_last_action(KeyboardInterface::Rights, char &key, bool &value)
+{
+  key = _last_key;
+  value = _last_value;
+
+  return L4_EOK;
+}
+
+
 void KbServer::release_key(char key)
 {
   _mutex.lock();
   auto res = _pressed_keys.erase(key);
+  _last_key = key;
+  _last_value = false;
   _mutex.unlock();
   
   if (res > 0)
+  {
+    _last_key = key;
+    _last_value = false;
     trigger_irqs();
+  }
 }
 
 
@@ -56,7 +71,11 @@ void KbServer::press_key(char key)
   _mutex.unlock();
 
   if (res.second)
+  {
+    _last_key = key;
+    _last_value = true;
     trigger_irqs();
+  }
 }
 
 
@@ -90,17 +109,11 @@ void *irq_receive(void *args)
         if (val > 128)
         {
           std::cout << "Released: " << key_char << '\n';
-          //t_args->mutex->lock();
-          //t_args->pressed->erase(val);
-          //t_args->mutex->unlock();
           t_args->kb->release_key(key_char);
         }
         else
         {
           std::cout << "Pressed: " << key_char << '\n';
-          //t_args->mutex->lock();
-          //t_args->pressed->insert(val);
-          //t_args->mutex->unlock();
           t_args->kb->press_key(key_char);
         }
       }
@@ -120,17 +133,7 @@ void *irq_receive(void *args)
           {
             std::cerr << "pfc is nullptr\n";
           }
-          
-          
-          /*
-          l4_cap_idx_t pfc = l4re_env_get_cap("pfc");
-          if (l4_is_valid_cap(pfc))
-            l4_platform_ctl_system_shutdown(pfc, 1);
-          else
-            std::cerr << "Could not get pfc capability! Cannot reboot!\n";
-          */         
         }
-
       }
     }
   }

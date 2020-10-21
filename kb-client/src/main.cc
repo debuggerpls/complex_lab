@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  std::cout << "Listening for keys: "
+  std::cout << "Listening for keys: ";
   for (auto c: chars)
     std::cout << "\'" << c << "\', ";
   std::cout << '\n';
@@ -89,6 +89,16 @@ int main(int argc, char **argv)
           std::cout << "\'" << c << "\':[" << (value ? "x" : " ") << "], ";
         }
       }
+
+      /*
+      {
+        // For testing only
+        char c;
+        bool v;
+        keyboard->last_action(&c, &v);
+        std::cout << "LK: \'" << c << "\': [" << v << "]";
+      }
+      */
       std::cout << '\n';
     }
     

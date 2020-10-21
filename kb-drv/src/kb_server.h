@@ -18,6 +18,7 @@ class KbServer : public L4::Epiface_t<KbServer, KeyboardInterface>
   public:
   int op_register_irq(KeyboardInterface::Rights, const L4::Ipc::Snd_fpage &irq);
   int op_is_pressed(KeyboardInterface::Rights, char key, bool &value);
+  int op_last_action(KeyboardInterface::Rights, char &key, bool &value);
 
   void release_key(char key);
   void press_key(char key);
@@ -25,6 +26,8 @@ class KbServer : public L4::Epiface_t<KbServer, KeyboardInterface>
   private:
   void trigger_irqs();
 
+  char _last_key;
+  bool _last_value;
   std::mutex _mutex;
   std::vector<L4::Cap<L4::Irq>> _irqs;
   std::set<char> _pressed_keys;
